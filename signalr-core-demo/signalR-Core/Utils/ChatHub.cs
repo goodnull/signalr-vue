@@ -15,9 +15,10 @@ namespace signalR_Core.Utils
         /// 连接时
         /// </summary>
         /// <returns></returns>
-        public override async Task OnConnectedAsync()
+        //public override async Task OnConnectedAsync()
+        public async Task Connected(string name)
         {
-            var name = RandomChinese.GetRandomChinese(ran.Next(3, 5));
+            //var name = RandomChinese.GetRandomChinese(ran.Next(3, 5));
             //提示所有人
             await Clients.All.SendAsync("Send", new Message
             {
@@ -54,7 +55,7 @@ namespace signalR_Core.Utils
 
             //加到用户列表
             UserListHandler.AddConnectedId(Context.ConnectionId, name);
-            await base.OnConnectedAsync();
+            //await base.OnConnectedAsync();
         }
 
         /// <summary>
@@ -64,18 +65,39 @@ namespace signalR_Core.Utils
         /// <returns></returns>
         public override async Task OnDisconnectedAsync(Exception ex)
         {
-            var data = UserListHandler.GetInstance().Where(a => a.Key == Context.ConnectionId).Select(a => new { key = a.Key, value = a.Value }).ToList()[0];
+            var user = UserListHandler.GetInstance().Where(a => a.Key == Context.ConnectionId).ToList()[0];
+            //var data = user.Select(a => new { key = a.Key, value = a.Value }).ToList()[0];
+
+            //从群列表中移除该成员，如果该群中人数人为0，则移除该群
+            GroupListHandler.RemoveConnectedId(Context.ConnectionId, out var listgroup, out var list);
+            foreach (var item in list)//通知群成员已退出群
+            {
+                await Clients.Group(item).SendAsync("SendGroup", new Message
+                {
+                    type = MsgType.GroupUserLeave,
+                    data = new { key = Context.ConnectionId, value = user.Value, group = item }
+                });
+            }
+            foreach (var item in listgroup)//通知所有人 群已解散
+            {
+                await Clients.All.SendAsync("GroupList", new Message
+                {
+                    type = MsgType.GroupRemove,
+                    data = item
+                });
+            }
+
             //列表下线
             await Clients.All.SendAsync("List", new Message
             {
                 type = MsgType.RemoveUser,
-                data = data
+                data = new { key = user.Key, value = user.Value }
             });
             //提示下线
             await Clients.All.SendAsync("Send", new Message
             {
                 type = MsgType.RemoveInfo,
-                data = data
+                data = new { key = user.Key, value = user.Value }
             });
             UserListHandler.GetInstance().Remove(Context.ConnectionId);
             await base.OnDisconnectedAsync(ex);
@@ -86,10 +108,10 @@ namespace signalR_Core.Utils
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        public Task Send(string message)
+        public async Task Send(string message)
         {
             var Value = UserListHandler.GetInstance().Where(a => a.Key == Context.ConnectionId).ToList()[0].Value;
-            return Clients.All.SendAsync("Send", new Message
+            await Clients.All.SendAsync("Send", new Message
             {
                 type = MsgType.GetAllMessage,
                 data = new { key = Context.ConnectionId, value = Value, msg = message }
@@ -174,30 +196,29 @@ namespace signalR_Core.Utils
         {
             var from = UserListHandler.GetInstance().Where(a => a.Key == Context.ConnectionId).ToList()[0];
 
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
             //从群列表中移除该成员，如果该群中人数人为0，则移除该群
-            if (GroupListHandler.RemoveConnectedId(Context.ConnectionId, groupName))
+            bool result = GroupListHandler.RemoveConnectedId(Context.ConnectionId, groupName);
+
+            ////提醒有人退出群聊
+            await Clients.Group(groupName).SendAsync("SendGroup", new Message
             {
-                ////提醒有人退出群聊
-                await Clients.Group(groupName).SendAsync("SendGroup", new Message
-                {
-                    type = MsgType.GroupUserLeave,
-                    data = new { key = Context.ConnectionId, value = from.Value, group = groupName }
-                });
-                await Clients.Caller.SendAsync("SendGroup", new Message
-                {
-                    type = MsgType.GroupUserLeave,
-                    data = new { key = Context.ConnectionId, value = from.Value, group = groupName }
-                });
-            }
-            else
+                type = MsgType.GroupUserLeave,
+                data = new { key = Context.ConnectionId, value = from.Value, group = groupName }
+            });
+            //await Clients.Caller.SendAsync("SendGroup", new Message
+            //{
+            //    type = MsgType.GroupUserLeave,
+            //    data = new { key = Context.ConnectionId, value = from.Value, group = groupName }
+            //});
+            if (result)
             {
                 await Clients.All.SendAsync("GroupList", new Message
                 {
                     type = MsgType.GroupRemove,
-                    data = new { group = groupName }
+                    data = groupName
                 });
             }
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
         }
     }
 }

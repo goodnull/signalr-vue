@@ -68,11 +68,37 @@ namespace signalR_Core.Utils
                     if (users.Count <= 0)
                     {
                         GetInstance().Remove(groupName);
-                        return false;
+                        return true;
                     }
                 }
             }
-            return true;
+            return false;
+        }
+
+        public static void RemoveConnectedId(string conId, out List<string> listgroup, out List<string> list)
+        {
+            listgroup = new List<string>();
+            list = new List<string>();
+            var dic = GetInstance();
+            foreach (var key in dic.Keys)
+            {
+                if (dic[key].Where(a => a == conId) != null)
+                {
+                    dic[key].Remove(conId);
+                    list.Add(key);
+                    if (dic[key].Count <= 0)
+                    {
+                        //dic.Remove(key);
+                        listgroup.Add(key);
+                    }
+                }
+            }
+            foreach (var item in listgroup)
+            {
+                dic.Remove(item);
+            }
+
+
         }
     }
 }

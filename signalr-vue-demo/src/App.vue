@@ -1,15 +1,22 @@
 <template>
 <div id="app" style="width:1000px;margin: 0 auto;height:600px;transform: translate(0, 12%);">
+
     <Card style="height:740px;">
-        <h1><span style="color:515a6e">Hi!&nbsp;&nbsp;&nbsp;</span><span v-text="callerName" style="color:#17233d" :callerKey='callerKey' ></span></h1>
-        <Tabs v-model="tab">
-            <TabPane label="公共聊天" name="pubilc">
+        <h1>&nbsp;
+            <span v-if="callerName">
+            <span style="color:515a6e">Hi!&nbsp;&nbsp;&nbsp;</span>
+            <span v-text="callerName" style="color:#17233d" :callerKey='callerKey'></span>
+            </span>
+            <span v-else>请先设置昵称</span>
+        </h1>
+        <Tabs v-model="tab" @on-click="SelectTab">
+            <TabPane :label="publicLabel" name="public">
                 <div style="height:560px;overflow:auto;border:1px solid #dcdee2;" id='alldiv'>
                     <ul id="allmsg">
                         <li v-for="item in allmsg" :style="item.type==1||item.type==31?'text-align:center':''">
                             <Tag v-if="item.type==1" color="blue">
                                 <span style="color:#808695">{{item.time}}</span>
-                                <span title="@TA" @click="selectToUser(item.data.key,item.data.value)">{{item.data.value}}&nbsp;</span>
+                                <span title="@TA" @click="selectToUser(item.data.key,item.data.value)">&nbsp;{{item.data.value}}&nbsp;</span>
                                 &nbsp;<span style="color:#808695">加入聊天</span>
                             </Tag>
                             <Tag v-else-if="item.type==31" color="gold">
@@ -29,15 +36,15 @@
                     <Input search enter-button="发送" placeholder="输入聊天内容" v-model="message_text" @on-search="senAll"/>
                 </Card>
             </TabPane>
-            <TabPane label="个人聊天" name='private'>
+            <TabPane :label="privateLabel" name='private'>
                 <div class="demo-split">
                     <div class="pane left">
                         <div style="height:600px;overflow:auto;">
                             <ul class="list" id="alluser">
                                 <li>用户列表</li>
-                                <li v-for="item in alluser" :title="'@'+item.value" class="list-view">
+                                <li v-for="item in alluser" :title="'@'+item.value" class="list-view" @click="selectUser(item.key,item.value)">
                                     <Avatar style="background:#7265e6">{{item.value[0]}}</Avatar>&nbsp;
-                                    <span :data="item.key" @click="selectUser(item.key,item.value)">{{item.value}}</span>
+                                    <span :data="item.key" >{{item.value}}</span>
                                 </li>
                             </ul>
                         </div>
@@ -80,18 +87,18 @@
                     </div>
                 </div>
             </TabPane>
-            <TabPane label="群组" name='group'>
+            <TabPane :label="groupLabel" name='group'>
                 <div class="demo-split">
                     <div class="pane left">
                         <div style="height:600px;overflow:auto;">
                             <ul class="list" id="alluser">
                                 <li>群列表
-                                    <Button type="primary" icon="md-add-circle" size="small" style="margin-left: 40px;" @click="createNewGroup()">
+                                    <Button type="primary" icon="md-add-circle" size="small" style="margin-left: 30px;" @click="createNewGroup()">
                                         创建新群组
                                     </Button>
                                 </li>
                                 <li v-for="item in grouplist" class="list-view">
-                                    <Avatar style="background:#7265e6">{{item[0]}}</Avatar>&nbsp;
+                                    <Avatar style="background:#7265e6">群</Avatar>&nbsp;
                                     <span @click="selectGroup(item)">{{item}}</span>
                                 </li>
                             </ul>
@@ -101,20 +108,24 @@
                         <div class="pane top">
                             <div style="height:560px;overflow:auto;" id='groupdiv'>
                                 <ul id="groupmsg">
-                                    <li v-for="item in groupmsg" :style="item.type==51||item.type==52?'text-align:center':''">
+                                    <li v-for="item in groupmsg" :style="item.type!=5?'text-align:center':''">
                                         <Tag v-if="item.type==51" color="blue">
                                             <span style="color:#808695">{{item.time}}</span>
                                             <span title="@TA" @click="selectToUser(item.data.key,item.data.value)">&nbsp;{{item.data.value}}&nbsp;</span>
                                             &nbsp;<span style="color:#808695">加入
                                                 【<span style="color:rgb(114, 101, 230)">&nbsp;{{item.data.group}}</span>】
                                             </span>
-
                                         </Tag>
                                         <Tag v-else-if="item.type==52" color="gold">
                                             <span style="color:#808695">{{item.time}}</span>
                                             &nbsp;{{item.data.value}}&nbsp;
                                             &nbsp;<span style="color:#808695">退出</span>
                                             【<span style="color:rgb(114, 101, 230)">&nbsp;{{item.data.group}}</span>】
+                                        </Tag>
+                                        <Tag v-else-if="item.type==56" color="lime">
+                                            <span style="color:#808695">{{item.time}}</span>
+                                            【<span style="color:rgb(114, 101, 230)">&nbsp;{{item.data}}</span>】
+                                            &nbsp;<span style="color:#808695">自动解散</span>
                                         </Tag>
                                         <Tag type="dot" v-else-if="item.type==5" :color="callerKey==item.data.key?'blue':'primary'">
                                             <span style="color:#808695">{{item.time}}</span>
@@ -156,7 +167,7 @@ import * as signalR from '@aspnet/signalr'
 export default {
     data() {
         return {
-            tab: 'group',
+            tab: 'public', //public,private,group
             message_text: '',
             private_message_text: '',
             group_message_text: '',
@@ -170,12 +181,55 @@ export default {
             sendgroup: '',
             sendkey: '',
             callerName: '',
+            setName: '',
             callerKey: '',
             connection: null,
-            modal1: false
+            loading: true,
+            publicBadge: 0,
+            privateBadge: 0,
+            groupBadge: 0,
+            publicLabel: (h) => {
+                return h('div', [
+                    h('span', '公共聊天'),
+                    h('Badge', {
+                        props: {
+                            count: this.publicBadge
+                        }
+                    })
+                ])
+            },
+            privateLabel: (h) => {
+                return h('div', [
+                    h('span', '个人聊天'),
+                    h('Badge', {
+                        props: {
+                            count: this.privateBadge
+                        }
+                    })
+                ])
+            },
+            groupLabel: (h) => {
+                return h('div', [
+                    h('span', '群组'),
+                    h('Badge', {
+                        props: {
+                            count: this.groupBadge
+                        }
+                    })
+                ])
+            }
         }
     },
     methods: {
+        SelectTab(n) {
+            if (n == 'public') {
+                this.publicBadge = 0
+            } else if (n == 'private') {
+                this.privateBadge = 0
+            } else if (n == 'group') {
+                this.groupBadge = 0
+            }
+        },
         senAll() {
             if (this.message_text == '') {
                 this.$Message.error('发送内容不能为空')
@@ -240,17 +294,19 @@ export default {
             this.$Message.info('@<span style="color:red;font-weight:bold">' + u + '</span>');
         },
         selectGroup(v) {
+            console.info('join', v)
             this.sendgroup = v
             this.connection.invoke('JoinGroup', v)
         },
         createNewGroup() {
             this.$Modal.confirm({
+                title: '创建新的群聊',
                 render: (h) => {
                     return h('Input', {
                         props: {
                             value: this.newgroupName,
                             autofocus: true,
-                            placeholder: '输入群名称'
+                            placeholder: '请输入群名称'
                         },
                         on: {
                             input: (val) => {
@@ -260,6 +316,7 @@ export default {
                     })
                 },
                 onOk: () => {
+                    this.newgroupName = this.newgroupName.trim()
                     if (this.newgroupName.length == 0) {
                         this.$Message.error('请输入群名称')
                         return
@@ -267,14 +324,57 @@ export default {
                     this.connection.invoke('JoinGroup', this.newgroupName)
                     this.$Message.info('创建成功！');
                     this.sendgroup = this.newgroupName
+                     this.newgroupName=''
                 },
             })
+        },
+        beforeunloadHandler(e) {
+            e.returnValue = '刷新'
         }
     },
     mounted() {
-        this.connection.start();
+        if (this.connection.state) return
+        //while (this.loading) {
+        this.$Modal.info({
+            title: '请设置你的昵称',
+            render: (h) => {
+                return h('Input', {
+                    class: 'centermodal',
+                    props: {
+                        value: this.setName,
+                        autofocus: true,
+                        placeholder: '请输入您的昵称'
+                    },
+                    on: {
+                        input: (val) => {
+                            this.setName = val;
+                        }
+                    }
+                })
+            },
+            onOk: () => {
+                this.setName = this.setName.trim()
+                if (this.setName.length == 0) {
+                    this.$Message.error('请输入您的昵称')
+                    return
+                }
+                this.connection.start().then(() => {
+                    this.loading = false
+                    this.callerName = this.setName
+                    window.addEventListener('beforeunload', e => this.beforeunloadHandler(e)) //阻止页面刷新
+                    this.connection.invoke('Connected', this.callerName)
+                })
+            },
+        })
+        //}
+
+        console.info('接受服务端推送消息')
         //接收公共信息
         this.connection.on('Send', msg => {
+            if (this.tab != 'public') { 
+                console.info(this.tab)
+                this.publicBadge++
+                }
             this.allmsg.push(msg)
             setTimeout(() => {
                 var sc = document.getElementById("alldiv")
@@ -283,7 +383,7 @@ export default {
         })
         //接收用户上下线通知
         this.connection.on('List', user => {
-            console.info(JSON.stringify(user))
+            //console.info(JSON.stringify(user))
             if (user.type == 2) { //用户连接，获得列表
                 for (var i = 0; i < user.data.length; i++) {
                     this.alluser.push(user.data[i])
@@ -304,6 +404,7 @@ export default {
         })
         //接收私密信息
         this.connection.on('SendUser', msg => {
+            if (this.tab != 'private') this.privateBadge++
             this.privatemsg.push(msg)
             setTimeout(() => {
                 var sc = document.getElementById("privatediv")
@@ -312,7 +413,8 @@ export default {
         })
         //接收群信息
         this.connection.on('SendGroup', msg => {
-            console.info(JSON.stringify(msg))
+            //console.info(JSON.stringify(msg))
+            if (this.tab != 'group') this.groupBadge++
             this.groupmsg.push(msg)
             setTimeout(() => {
                 var sc = document.getElementById("groupdiv")
@@ -332,6 +434,12 @@ export default {
                 for (var i = 0; i < this.grouplist.length; i++) {
                     if (this.grouplist[i] == group.data) {
                         this.grouplist.splice(i, 1)
+                        this.groupmsg.push({
+                            type: 56,
+                            time: group.time,
+                            data: group.data
+                        })
+                        if (this.tab != 'group') this.groupBadge++
                         break
                     }
                 }
@@ -350,7 +458,6 @@ export default {
 <style>
 ul li {
     list-style: none;
-
 }
 
 .message {
