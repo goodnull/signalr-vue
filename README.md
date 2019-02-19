@@ -11,15 +11,15 @@ UI 则是目前流行的基于 Vue.js 的 iView
 
 - 公共聊天
 
-  ![1550548925428](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1550548925428.png)
+  ![public](signalr-vue-demo\src\assets\public.png)
 
 - 个人聊天
 
-  ![1550548982453](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1550548982453.png)
+  ![private](signalr-vue-demo\src\assets\private.png)
 
 - 群组聊天
 
-  ![1550549038301](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\1550549038301.png)
+  ![group](signalr-vue-demo\src\assets\group.png)
 
 - 上下线提醒
 
