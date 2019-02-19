@@ -41,9 +41,9 @@
                     <div class="pane left">
                         <div style="height:600px;overflow:auto;">
                             <ul class="list" id="alluser">
-                                <li>用户列表</li>
-                                <li v-for="item in alluser" :title="'@'+item.value" class="list-view" @click="selectUser(item.key,item.value)">
-                                    <Avatar style="background:#7265e6">{{item.value[0]}}</Avatar>&nbsp;
+                                <li style="margin:5px 0 0 15px">用户列表</li>
+                                <li v-for="(item,index) in alluser" :title="'@'+item.value" class="list-view" :class="{'active':userindex === index}" @click="selectUser(item.key,item.value,index)">
+                                    <Avatar style="background:#7265e6;margin-left: 10px;">{{item.value[0]}}</Avatar>&nbsp;
                                     <span :data="item.key" >{{item.value}}</span>
                                 </li>
                             </ul>
@@ -56,12 +56,12 @@
                                     <li v-for="item in privatemsg">
                                         <Tag type="dot" color="blue" v-if="item.type==61">
                                             <span style="color:#808695">{{item.time}}&nbsp;@</span>
-                                            <span title="@TA" @click="selectUser(item.data.key,item.data.value)">{{item.data.value}}&nbsp;</span>
+                                            <span title="@TA" @click="selectToUser(item.data.key,item.data.value)">{{item.data.value}}&nbsp;</span>
                                             <span class="message">{{item.data.msg}}</span>
                                         </Tag>
                                         <Tag type="dot" color="primary" v-if="item.type==6">
                                             <span style="color:#808695">{{item.time}}&nbsp;来自:</span>
-                                            <span title="@TA" @click="selectUser(item.data.key,item.data.value)" style="color:#1890ff">{{item.data.value}}&nbsp;</span>
+                                            <span title="@TA" @click="selectToUser(item.data.key,item.data.value)" style="color:#1890ff">{{item.data.value}}&nbsp;</span>
                                             <span class="message">{{item.data.msg}}</span>
                                         </Tag>
                                     </li>
@@ -74,7 +74,7 @@
                                 <Alert type="error">
                                     <span v-if="senduser">
                                           <span style="color:#808695">正在给</span>
-                                    &nbsp;<span v-text="senduser" :key="sendkey" style="font-weight:bold;color:rgb(114, 101, 230)"></span>
+                                    &nbsp;<span v-text="senduser" :key="sendkey" style="font-weight:bold;color:#2b85e4"></span>
                                     &nbsp;<span style="color:#808695">发送信息</span>
                                     </span>
                                     <span v-else>
@@ -92,21 +92,21 @@
                     <div class="pane left">
                         <div style="height:600px;overflow:auto;">
                             <ul class="list" id="alluser">
-                                <li>群列表
+                                <li style="margin:0px 0 0 15px">群列表
                                     <Button type="primary" icon="md-add-circle" size="small" style="margin-left: 30px;" @click="createNewGroup()">
                                         创建新群组
                                     </Button>
                                 </li>
-                                <li v-for="item in grouplist" class="list-view">
-                                    <Avatar style="background:#7265e6">群</Avatar>&nbsp;
-                                    <span @click="selectGroup(item)">{{item}}</span>
+                                <li v-for="(item,index) in grouplist" class="list-view" :class="{'active':groupindex === index}" @click="selectGroup(item,index)">
+                                    <Avatar style="background:#7265e6;margin-left: 10px;">群</Avatar>&nbsp;
+                                    <span>{{item}}</span>
                                 </li>
                             </ul>
                         </div>
                     </div>
                     <div class="pane right">
                         <div class="pane top">
-                            <div style="height:560px;overflow:auto;" id='groupdiv'>
+                            <div style="height:100%;overflow:auto;" id='groupdiv'>
                                 <ul id="groupmsg">
                                     <li v-for="item in groupmsg" :style="item.type!=5?'text-align:center':''">
                                         <Tag v-if="item.type==51" color="blue">
@@ -138,13 +138,13 @@
                             </div>
                         </div>
                         <div class="pane bottom">
-                            <Card :padding='0' :bordered='false' :dis-hover='true' style="">
+                            <Card :padding='0' :bordered='false' :dis-hover='true' style="margin-top:5px;">
                                 <Alert type="error">
                                     <span v-if="sendgroup">
                                           <span style="color:#808695">正在给群组</span>
-                                    &nbsp;<span v-text="sendgroup" :key="sendgroup" style="font-weight:bold;color:rgb(114, 101, 230)"></span>
+                                    &nbsp;<span v-text="sendgroup" :key="sendgroup" style="font-weight:bold;color:#2b85e4"></span>
                                     &nbsp;<span style="color:#808695">发送信息</span>
-                                    <Button type="warning" size="small" @click="leave_group" icon="md-exit" style="float:auto;margin-top:0px;margin-right:-50px;">离开群组</Button>
+                                    <Button type="warning" size="small" @click="leave_group" icon="md-exit" style="float:auto;margin-top:0px;margin-left:15px;">离开群组</Button>
                                     </span>
                                     <span v-else>
                                         <span style="color:#808695">请在左侧选择要发送信息的群</span>
@@ -188,6 +188,8 @@ export default {
             publicBadge: 0,
             privateBadge: 0,
             groupBadge: 0,
+            userindex: '',
+            groupindex: '',
             publicLabel: (h) => {
                 return h('div', [
                     h('span', '公共聊天'),
@@ -241,7 +243,7 @@ export default {
         leave_group() {
             this.$Modal.confirm({
                 title: '提示',
-                content: '确认退出群组【' + this.sendgroup + '】吗？',
+                content: '确认退出群组【<span style="font-weight:bold;color:#ed4014;font-size:16px;">' + this.sendgroup + '】</span>吗？<br>退出后你将不来收到该群信息，但还可以重新加入',
                 onOk: () => {
                     this.connection.invoke('LeaveGroup', this.sendgroup)
                     this.$Message.info('您已离开群组' + this.sendgroup);
@@ -281,21 +283,28 @@ export default {
             this.connection.invoke('SendPrivate', this.sendkey, this.private_message_text)
             this.private_message_text = ''
         },
-        selectUser(k, u) {
+        selectUser(k, u, i) {
             this.sendkey = k
             this.senduser = u
-            this.$Message.info('@<span style="color:red;font-weight:bold">' + u + '</span>');
+            this.userindex = i
+            //this.$Message.info('@<span style="color:red;font-weight:bold">' + u + '</span>');
         },
         selectToUser(k, u) {
             if (k == this.callerKey) return;
             this.sendkey = k
             this.senduser = u
             this.tab = 'private'
-            this.$Message.info('@<span style="color:red;font-weight:bold">' + u + '</span>');
+            for (var i = 0; i < this.alluser.length; i++) {
+                if (this.alluser[i].key == k) {
+                    this.userindex = i
+                    break;
+                }
+            }
+            //this.$Message.info('@<span style="color:red;font-weight:bold">' + u + '</span>');
         },
-        selectGroup(v) {
-            console.info('join', v)
+        selectGroup(v, i) {
             this.sendgroup = v
+            this.groupindex = i
             this.connection.invoke('JoinGroup', v)
         },
         createNewGroup() {
@@ -324,7 +333,7 @@ export default {
                     this.connection.invoke('JoinGroup', this.newgroupName)
                     this.$Message.info('创建成功！');
                     this.sendgroup = this.newgroupName
-                     this.newgroupName=''
+                    this.newgroupName = ''
                 },
             })
         },
@@ -356,6 +365,7 @@ export default {
                 this.setName = this.setName.trim()
                 if (this.setName.length == 0) {
                     this.$Message.error('请输入您的昵称')
+                    window.location = window.location
                     return
                 }
                 this.connection.start().then(() => {
@@ -371,10 +381,10 @@ export default {
         console.info('接受服务端推送消息')
         //接收公共信息
         this.connection.on('Send', msg => {
-            if (this.tab != 'public') { 
-                console.info(this.tab)
+            if (this.tab != 'public') {
+                //console.info(this.tab)
                 this.publicBadge++
-                }
+            }
             this.allmsg.push(msg)
             setTimeout(() => {
                 var sc = document.getElementById("alldiv")
@@ -430,6 +440,12 @@ export default {
                 }
             } else if (group.type == 54) { //新增群
                 this.grouplist.push(group.data)
+                for (var i = 0; i < this.grouplist.length; i++) {
+                    if (this.grouplist[i] == this.sendgroup) {
+                        this.groupindex = i
+                        break;
+                    }
+                }
             } else if (group.type == 55) { //移除群
                 for (var i = 0; i < this.grouplist.length; i++) {
                     if (this.grouplist[i] == group.data) {
@@ -466,7 +482,7 @@ ul li {
 }
 
 .list {
-    margin-left: 10px;
+    margin-left: 0px;
 }
 
 .list li {
@@ -479,16 +495,18 @@ ul li {
 }
 
 .list .list-view:hover {
-    color: #3399ff;
+    /* color: #3399ff;*/
     cursor: pointer;
+    color: #3399ff;
+}
+
+.active {
+    background-color: #C9D8FA;
+    border-radius: 2px;
 }
 
 .demo-split {
-    height: 100%;
-}
-
-.pane {
-    border-collapse: collapse;
+    height: 650px;
 }
 
 .left {
