@@ -15,7 +15,6 @@ namespace signalR_Core
     {
         public static void Main(string[] args)
         {
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             CreateWebHostBuilder(args).Build().Run();
         }
 
