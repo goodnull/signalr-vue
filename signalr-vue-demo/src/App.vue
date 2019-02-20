@@ -24,7 +24,7 @@
                                 &nbsp;{{item.data.value}}
                                 &nbsp;<span style="color:#808695">退出聊天</span>
                             </Tag>
-                            <Tag type="dot" :color="callerKey==item.data.key?'blue':'primary'" v-else-if="item.type==4">
+                            <Tag type="dot" :color="callerKey==item.data.key?'blue':'primary'" v-else-if="item.type==4" style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
                                 <span style="color:#808695">{{item.time}}</span>
                                 <span title="@TA" @click="selectToUser(item.data.key,item.data.value)" style="color:#1890ff">&nbsp;{{item.data.value}}&nbsp;</span>
                                 <span class="message">{{item.data.msg}}</span>
@@ -54,12 +54,12 @@
                             <div style="height:520px;overflow:auto;" id='privatediv'>
                                 <ul id="privatemsg">
                                     <li v-for="item in privatemsg">
-                                        <Tag type="dot" color="blue" v-if="item.type==61">
+                                        <Tag type="dot" color="blue" v-if="item.type==61" style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
                                             <span style="color:#808695">{{item.time}}&nbsp;@</span>
                                             <span title="@TA" @click="selectToUser(item.data.key,item.data.value)">{{item.data.value}}&nbsp;</span>
                                             <span class="message">{{item.data.msg}}</span>
                                         </Tag>
-                                        <Tag type="dot" color="primary" v-if="item.type==6">
+                                        <Tag type="dot" color="primary" v-if="item.type==6" style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
                                             <span style="color:#808695">{{item.time}}&nbsp;来自:</span>
                                             <span title="@TA" @click="selectToUser(item.data.key,item.data.value)" style="color:#1890ff">{{item.data.value}}&nbsp;</span>
                                             <span class="message">{{item.data.msg}}</span>
@@ -127,7 +127,7 @@
                                             【<span style="color:rgb(114, 101, 230)">&nbsp;{{item.data}}</span>】
                                             &nbsp;<span style="color:#808695">自动解散</span>
                                         </Tag>
-                                        <Tag type="dot" v-else-if="item.type==5" :color="callerKey==item.data.key?'blue':'primary'">
+                                        <Tag type="dot" v-else-if="item.type==5" :color="callerKey==item.data.key?'blue':'primary'" style="word-wrap:break-word;word-break:break-all;height:auto;line-height: 25px;">
                                             <span style="color:#808695">{{item.time}}</span>
                                             <span style="color:rgb(114, 101, 230)">&nbsp;【{{item.data.group}}】</span>
                                             <span title="@TA" @click="selectToUser(item.data.key,item.data.value)" style="color:#1890ff">&nbsp;{{item.data.value}}&nbsp;</span>
