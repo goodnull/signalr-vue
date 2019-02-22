@@ -9,7 +9,6 @@ namespace signalR_Core.Utils
 {
     public class ChatHub : Hub
     {
-        Random ran = new Random();
         /// <summary>
         /// 连接时
         /// </summary>
@@ -38,7 +37,7 @@ namespace signalR_Core.Utils
                 data = GroupListHandler.GetInstance().Keys.ToList()
             });
 
-
+            //自己昵称和id
             await Clients.Caller.SendAsync("List", new Message
             {
                 type = MsgType.CallerName,
@@ -176,7 +175,7 @@ namespace signalR_Core.Utils
                     data = new { key = Context.ConnectionId, value = from.Value, group = groupName }
                 });
             }
-            if (i == 2)//新增群
+            if (i == 2)//新增群，更新列表
             {
                 await Clients.All.SendAsync("GroupList", new Message
                 {

@@ -24,7 +24,8 @@
                                 &nbsp;{{item.data.value}}
                                 &nbsp;<span style="color:#808695">退出聊天</span>
                             </Tag>
-                            <Tag type="dot" :color="callerKey==item.data.key?'blue':'primary'" v-else-if="item.type==4" style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
+                            <Tag type="dot" :color="callerKey==item.data.key?'blue':'primary'" v-else-if="item.type==4"
+                             style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
                                 <span style="color:#808695">{{item.time}}</span>
                                 <span title="@TA" @click="selectToUser(item.data.key,item.data.value)" style="color:#1890ff">&nbsp;{{item.data.value}}&nbsp;</span>
                                 <span class="message">{{item.data.msg}}</span>
@@ -184,7 +185,6 @@ export default {
             setName: '',
             callerKey: '',
             connection: null,
-            loading: true,
             publicBadge: 0,
             privateBadge: 0,
             groupBadge: 0,
@@ -369,7 +369,7 @@ export default {
                     return
                 }
                 this.connection.start().then(() => {
-                    this.loading = false
+                    //this.loading = false
                     this.callerName = this.setName
                     window.addEventListener('beforeunload', e => this.beforeunloadHandler(e)) //阻止页面刷新
                     this.connection.invoke('Connected', this.callerName)
