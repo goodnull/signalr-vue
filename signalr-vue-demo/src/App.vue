@@ -1,6 +1,5 @@
 <template>
 <div id="app" style="width:1000px;margin: 0 auto;height:600px;transform: translate(0, 12%);">
-
     <Card style="height:740px;">
         <h1>&nbsp;
             <span v-if="callerName">
@@ -16,18 +15,18 @@
                         <li v-for="item in allmsg" :style="item.type==1||item.type==31?'text-align:center':''">
                             <Tag v-if="item.type==1" color="blue">
                                 <span style="color:#808695">{{item.time}}</span>
-                                <span title="@TA" @click="selectToUser(item.data.key,item.data.value)">&nbsp;{{item.data.value}}&nbsp;</span>
+                                <span title="@TA" @click="selectToUser(item.data.connectId,item.data.connectName)">&nbsp;{{item.data.connectName}}&nbsp;</span>
                                 &nbsp;<span style="color:#808695">加入聊天</span>
                             </Tag>
                             <Tag v-else-if="item.type==31" color="gold">
                                 <span style="color:#808695">{{item.time}}</span>
-                                &nbsp;{{item.data.value}}
+                                &nbsp;{{item.data.connectName}}
                                 &nbsp;<span style="color:#808695">退出聊天</span>
                             </Tag>
-                            <Tag type="dot" :color="callerKey==item.data.key?'blue':'primary'" v-else-if="item.type==4"
-                             style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
+                            <Tag type="dot" :color="callerKey==item.data.connectId?'blue':'primary'" v-else-if="item.type==4" style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
                                 <span style="color:#808695">{{item.time}}</span>
-                                <span title="@TA" @click="selectToUser(item.data.key,item.data.value)" style="color:#1890ff">&nbsp;{{item.data.value}}&nbsp;</span>
+                                <!-- <Avatar style="background:#7265e6;margin-left: 10px;">{{item.data.connectName[0]}}</Avatar> -->
+                                <span title="@TA" @click="selectToUser(item.data.connectId,item.data.connectName)" style="color:#1890ff">&nbsp;{{item.data.connectName}}&nbsp;</span>
                                 <span class="message">{{item.data.msg}}</span>
                             </Tag>
                         </li>
@@ -43,9 +42,9 @@
                         <div style="height:600px;overflow:auto;">
                             <ul class="list" id="alluser">
                                 <li style="margin:5px 0 0 15px">用户列表</li>
-                                <li v-for="(item,index) in alluser" :title="'@'+item.value" class="list-view" :class="{'active':userindex === index}" @click="selectUser(item.key,item.value,index)">
-                                    <Avatar style="background:#7265e6;margin-left: 10px;">{{item.value[0]}}</Avatar>&nbsp;
-                                    <span :data="item.key" >{{item.value}}</span>
+                                <li v-for="(item,index) in alluser" :title="'@'+item.connectName" class="list-view" :class="{'active':userindex === index}" @click="selectUser(item.connectId,item.connectName,index)">
+                                    <Avatar style="background:#7265e6;margin-left: 10px;">{{item.connectName[0]}}</Avatar>&nbsp;
+                                    <span :data="item.connectId" >{{item.connectName}}</span>
                                 </li>
                             </ul>
                         </div>
@@ -57,12 +56,12 @@
                                     <li v-for="item in privatemsg">
                                         <Tag type="dot" color="blue" v-if="item.type==61" style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
                                             <span style="color:#808695">{{item.time}}&nbsp;@</span>
-                                            <span title="@TA" @click="selectToUser(item.data.key,item.data.value)">{{item.data.value}}&nbsp;</span>
+                                            <span title="@TA" @click="selectToUser(item.data.connectId,item.data.connectName)">{{item.data.connectName}}&nbsp;</span>
                                             <span class="message">{{item.data.msg}}</span>
                                         </Tag>
                                         <Tag type="dot" color="primary" v-if="item.type==6" style="word-wrap:break-word;word-break:break-all;height:auto;line-height:25px;">
                                             <span style="color:#808695">{{item.time}}&nbsp;来自:</span>
-                                            <span title="@TA" @click="selectToUser(item.data.key,item.data.value)" style="color:#1890ff">{{item.data.value}}&nbsp;</span>
+                                            <span title="@TA" @click="selectToUser(item.data.connectId,item.data.connectName)" style="color:#1890ff">{{item.data.connectName}}&nbsp;</span>
                                             <span class="message">{{item.data.msg}}</span>
                                         </Tag>
                                     </li>
@@ -73,9 +72,9 @@
                         <div class="pane bottom">
                             <Card :padding='0' :bordered='false' :dis-hover='true' style="top:5px;height:50px;">
                                 <Alert type="error">
-                                    <span v-if="senduser">
+                                    <span v-if="sendUserName">
                                           <span style="color:#808695">正在给</span>
-                                    &nbsp;<span v-text="senduser" :key="sendkey" style="font-weight:bold;color:#2b85e4"></span>
+                                    &nbsp;<span v-text="sendUserName" :key="sendConnectId" style="font-weight:bold;color:#2b85e4"></span>
                                     &nbsp;<span style="color:#808695">发送信息</span>
                                     </span>
                                     <span v-else>
@@ -112,14 +111,14 @@
                                     <li v-for="item in groupmsg" :style="item.type!=5?'text-align:center':''">
                                         <Tag v-if="item.type==51" color="blue">
                                             <span style="color:#808695">{{item.time}}</span>
-                                            <span title="@TA" @click="selectToUser(item.data.key,item.data.value)">&nbsp;{{item.data.value}}&nbsp;</span>
+                                            <span title="@TA" @click="selectToUser(item.data.connectId,item.data.connectName)">&nbsp;{{item.data.connectName}}&nbsp;</span>
                                             &nbsp;<span style="color:#808695">加入
                                                 【<span style="color:rgb(114, 101, 230)">&nbsp;{{item.data.group}}</span>】
                                             </span>
                                         </Tag>
                                         <Tag v-else-if="item.type==52" color="gold">
                                             <span style="color:#808695">{{item.time}}</span>
-                                            &nbsp;{{item.data.value}}&nbsp;
+                                            &nbsp;{{item.data.connectName}}&nbsp;
                                             &nbsp;<span style="color:#808695">退出</span>
                                             【<span style="color:rgb(114, 101, 230)">&nbsp;{{item.data.group}}</span>】
                                         </Tag>
@@ -128,10 +127,10 @@
                                             【<span style="color:rgb(114, 101, 230)">&nbsp;{{item.data}}</span>】
                                             &nbsp;<span style="color:#808695">自动解散</span>
                                         </Tag>
-                                        <Tag type="dot" v-else-if="item.type==5" :color="callerKey==item.data.key?'blue':'primary'" style="word-wrap:break-word;word-break:break-all;height:auto;line-height: 25px;">
+                                        <Tag type="dot" v-else-if="item.type==5" :color="callerKey==item.data.connectId?'blue':'primary'" style="word-wrap:break-word;word-break:break-all;height:auto;line-height: 25px;">
                                             <span style="color:#808695">{{item.time}}</span>
                                             <span style="color:rgb(114, 101, 230)">&nbsp;【{{item.data.group}}】</span>
-                                            <span title="@TA" @click="selectToUser(item.data.key,item.data.value)" style="color:#1890ff">&nbsp;{{item.data.value}}&nbsp;</span>
+                                            <span title="@TA" @click="selectToUser(item.data.connectId,item.data.connectName)" style="color:#1890ff">&nbsp;{{item.data.connectName}}&nbsp;</span>
                                             <span class="message">{{item.data.msg}}</span>
                                         </Tag>
                                     </li>
@@ -169,6 +168,7 @@ export default {
     data() {
         return {
             tab: 'public', //public,private,group
+            connection: null,
             message_text: '',
             private_message_text: '',
             group_message_text: '',
@@ -178,13 +178,12 @@ export default {
             groupmsg: [],
             alluser: [],
             grouplist: [],
-            senduser: '',
             sendgroup: '',
-            sendkey: '',
+            sendUserName: '',
+            sendConnectId: '',
             callerName: '',
             setName: '',
             callerKey: '',
-            connection: null,
             publicBadge: 0,
             privateBadge: 0,
             groupBadge: 0,
@@ -245,6 +244,12 @@ export default {
                 title: '提示',
                 content: '确认退出群组【<span style="font-weight:bold;color:#ed4014;font-size:16px;">' + this.sendgroup + '】</span>吗？<br>退出后你将不来收到该群信息，但还可以重新加入',
                 onOk: () => {
+                    for (var i = 0; i < this.grouplist.length; i++) {
+                        if (this.grouplist[i] == this.sendgroup) {
+                            this.groupindex = ''
+                            break;
+                        }
+                    }
                     this.connection.invoke('LeaveGroup', this.sendgroup)
                     this.$Message.info('您已离开群组' + this.sendgroup);
                     this.sendgroup = ''
@@ -253,7 +258,7 @@ export default {
         },
         sendgroupmsg() {
             if (this.sendgroup.length == 0) {
-                this.$Message.error('请先选择要发送的群')
+                //this.$Message.error('请先选择要发送的群')
                 this.$Modal.warning({
                     title: '提示',
                     content: '请先在左侧选择要发送的群'
@@ -268,8 +273,8 @@ export default {
             this.group_message_text = ''
         },
         sendprivatemsg() { //发送私聊信息
-            if (this.sendkey.length < 3) {
-                this.$Message.error('请先选择要发送的人')
+            if (this.sendConnectId.length < 3) {
+                //this.$Message.error('请先选择要发送的人')
                 this.$Modal.warning({
                     title: '提示',
                     content: '请先在左侧选择要发送的人'
@@ -280,22 +285,22 @@ export default {
                 this.$Message.error('发送内容不能为空')
                 return
             }
-            this.connection.invoke('SendPrivate', this.sendkey, this.private_message_text)
+            this.connection.invoke('SendPrivate', this.sendConnectId, this.private_message_text)
             this.private_message_text = ''
         },
         selectUser(k, u, i) {
-            this.sendkey = k
-            this.senduser = u
+            this.sendConnectId = k
+            this.sendUserName = u
             this.userindex = i
             //this.$Message.info('@<span style="color:red;font-weight:bold">' + u + '</span>');
         },
         selectToUser(k, u) {
             if (k == this.callerKey) return;
-            this.sendkey = k
-            this.senduser = u
+            this.sendConnectId = k
+            this.sendUserName = u
             this.tab = 'private'
             for (var i = 0; i < this.alluser.length; i++) {
-                if (this.alluser[i].key == k) {
+                if (this.alluser[i].connectId == k) {
                     this.userindex = i
                     break;
                 }
@@ -373,12 +378,17 @@ export default {
                     this.callerName = this.setName
                     window.addEventListener('beforeunload', e => this.beforeunloadHandler(e)) //阻止页面刷新
                     this.connection.invoke('Connected', this.callerName)
+                }).catch(() => {
+                    this.$Modal.error({
+                        title: '提示',
+                        content: '连接服务器出错'
+                    });
                 })
             },
         })
         //}
 
-        console.info('接受服务端推送消息')
+        //console.info('接受服务端推送消息')
         //接收公共信息
         this.connection.on('Send', msg => {
             if (this.tab != 'public') {
@@ -402,14 +412,14 @@ export default {
                 this.alluser.push(user.data)
             } else if (user.type == 3) { //用户下线，列表移除
                 for (var i = 0; i < this.alluser.length; i++) {
-                    if (this.alluser[i].key == user.data.key) {
+                    if (this.alluser[i].connectId == user.data.connectId) {
                         this.alluser.splice(i, 1)
                         break
                     }
                 }
             } else if (user.type == 12) { //自己的信息
-                this.callerName = user.data.value
-                this.callerKey = user.data.key
+                this.callerName = user.data.connectName
+                this.callerKey = user.data.connectId
             }
         })
         //接收私密信息
@@ -447,7 +457,11 @@ export default {
                     }
                 }
             } else if (group.type == 55) { //移除群
+                if (group.data == this.sendgroup) {
+                    this.groupindex = ''
+                }
                 for (var i = 0; i < this.grouplist.length; i++) {
+
                     if (this.grouplist[i] == group.data) {
                         this.grouplist.splice(i, 1)
                         this.groupmsg.push({

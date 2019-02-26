@@ -16,38 +16,37 @@ namespace signalR_Core.Utils
         //public override async Task OnConnectedAsync()
         public async Task Connected(string name)
         {
-            //var name = RandomChinese.GetRandomChinese(ran.Next(3, 5));
             //提示所有人
-            await Clients.All.SendAsync("Send", new Message
+            await Clients.All.SendAsync(PushMsg.Send, new Message
             {
                 type = MsgType.AddUser,
-                data = new { key = Context.ConnectionId, value = name }
+                data = new { connectId = Context.ConnectionId, connectName = name }
             });
             //自己获得用户列表
-            await Clients.Caller.SendAsync("List", new Message
+            await Clients.Caller.SendAsync(PushMsg.List, new Message
             {
                 type = MsgType.GetUserList,
-                data = UserListHandler.GetInstance().Where(a => a.Key != Context.ConnectionId).Select(a => new { key = a.Key, value = a.Value }).ToList()
+                data = UserListHandler.GetInstance().Where(a => a.Key != Context.ConnectionId).Select(a => new { connectId = a.Key, connectName = a.Value }).ToList()
             });
 
             //自己获得群列表
-            await Clients.Caller.SendAsync("GroupList", new Message
+            await Clients.Caller.SendAsync(PushMsg.GroupList, new Message
             {
                 type = MsgType.GroupList,
                 data = GroupListHandler.GetInstance().Keys.ToList()
             });
 
             //自己昵称和id
-            await Clients.Caller.SendAsync("List", new Message
+            await Clients.Caller.SendAsync(PushMsg.List, new Message
             {
                 type = MsgType.CallerName,
-                data = new { key = Context.ConnectionId, value = name }
+                data = new { connectId = Context.ConnectionId, connectName = name }
             });
             //更新其他人用户列表
-            await Clients.Others.SendAsync("List", new Message
+            await Clients.Others.SendAsync(PushMsg.List, new Message
             {
                 type = MsgType.OtherUser,
-                data = new { key = Context.ConnectionId, value = name }
+                data = new { connectId = Context.ConnectionId, connectName = name }
             });
 
 
@@ -70,15 +69,15 @@ namespace signalR_Core.Utils
             GroupListHandler.RemoveConnectedId(Context.ConnectionId, out var listgroup, out var list);
             foreach (var item in list)//通知群成员已退出群
             {
-                await Clients.Group(item).SendAsync("SendGroup", new Message
+                await Clients.Group(item).SendAsync(PushMsg.SendGroup, new Message
                 {
                     type = MsgType.GroupUserLeave,
-                    data = new { key = Context.ConnectionId, value = user.Value, group = item }
+                    data = new { connectId = Context.ConnectionId, connectName = user.Value, group = item }
                 });
             }
             foreach (var item in listgroup)//通知所有人 群已解散
             {
-                await Clients.All.SendAsync("GroupList", new Message
+                await Clients.All.SendAsync(PushMsg.GroupList, new Message
                 {
                     type = MsgType.GroupRemove,
                     data = item
@@ -86,16 +85,16 @@ namespace signalR_Core.Utils
             }
 
             //列表下线
-            await Clients.All.SendAsync("List", new Message
+            await Clients.All.SendAsync(PushMsg.List, new Message
             {
                 type = MsgType.RemoveUser,
-                data = new { key = user.Key, value = user.Value }
+                data = new { connectId = user.Key, connectName = user.Value }
             });
             //提示下线
-            await Clients.All.SendAsync("Send", new Message
+            await Clients.All.SendAsync(PushMsg.Send, new Message
             {
                 type = MsgType.RemoveInfo,
-                data = new { key = user.Key, value = user.Value }
+                data = new { connectId = user.Key, value = user.Value }
             });
             UserListHandler.GetInstance().Remove(Context.ConnectionId);
             await base.OnDisconnectedAsync(ex);
@@ -109,10 +108,10 @@ namespace signalR_Core.Utils
         public async Task Send(string message)
         {
             var Value = UserListHandler.GetInstance().Where(a => a.Key == Context.ConnectionId).ToList()[0].Value;
-            await Clients.All.SendAsync("Send", new Message
+            await Clients.All.SendAsync(PushMsg.Send, new Message
             {
                 type = MsgType.GetAllMessage,
-                data = new { key = Context.ConnectionId, value = Value, msg = message }
+                data = new { connectId = Context.ConnectionId, connectName = Value, msg = message }
             });
         }
         /// <summary>
@@ -126,19 +125,19 @@ namespace signalR_Core.Utils
             var from = UserListHandler.GetInstance().Where(a => a.Key == Context.ConnectionId).ToList()[0];
             var go = UserListHandler.GetInstance().Where(a => a.Key == key).ToList()[0];
             //提示自己
-            await Clients.Caller.SendAsync("SendUser", new Message
+            await Clients.Caller.SendAsync(PushMsg.SendUser, new Message
             {
                 type = MsgType.CallerPrivateMessage,
-                data = new { key = Context.ConnectionId, value = go.Value, msg = message, to = from }
+                data = new { connectId = Context.ConnectionId, connectName = go.Value, msg = message, to = from }
             });
             //发送给指定的人
-            await Clients.Client(key).SendAsync("SendUser", new Message
+            await Clients.Client(key).SendAsync(PushMsg.SendUser, new Message
             {
                 type = MsgType.GetPrivateMessage,
-                data = new { key = Context.ConnectionId, value = from.Value, msg = message, to = go }
+                data = new { connectId = Context.ConnectionId, connectName = from.Value, msg = message, to = go }
             });
-
         }
+
         /// <summary>
         /// 发送群组信息
         /// </summary>
@@ -149,10 +148,10 @@ namespace signalR_Core.Utils
         {
             var from = UserListHandler.GetInstance().Where(a => a.Key == Context.ConnectionId).ToList()[0];
 
-            return Clients.Group(groupName).SendAsync("SendGroup", new Message
+            return Clients.Group(groupName).SendAsync(PushMsg.SendGroup, new Message
             {
                 type = MsgType.GetGroupMessage,
-                data = new { key = Context.ConnectionId, value = from.Value, group = groupName, msg = message }
+                data = new { connectId = Context.ConnectionId, connectName = from.Value, group = groupName, msg = message }
             });
         }
 
@@ -169,15 +168,15 @@ namespace signalR_Core.Utils
             {
                 var from = UserListHandler.GetInstance().Where(a => a.Key == Context.ConnectionId).ToList()[0];
                 //提醒有人加入群聊
-                await Clients.Group(groupName).SendAsync("SendGroup", new Message
+                await Clients.Group(groupName).SendAsync(PushMsg.SendGroup, new Message
                 {
                     type = MsgType.GroupUserJoin,
-                    data = new { key = Context.ConnectionId, value = from.Value, group = groupName }
+                    data = new { connectId = Context.ConnectionId, connectName = from.Value, group = groupName }
                 });
             }
             if (i == 2)//新增群，更新列表
             {
-                await Clients.All.SendAsync("GroupList", new Message
+                await Clients.All.SendAsync(PushMsg.GroupList, new Message
                 {
                     type = MsgType.GroupAdd,
                     data = groupName
@@ -198,19 +197,15 @@ namespace signalR_Core.Utils
             bool result = GroupListHandler.RemoveConnectedId(Context.ConnectionId, groupName);
 
             ////提醒有人退出群聊
-            await Clients.Group(groupName).SendAsync("SendGroup", new Message
+            await Clients.Group(groupName).SendAsync(PushMsg.SendGroup, new Message
             {
                 type = MsgType.GroupUserLeave,
-                data = new { key = Context.ConnectionId, value = from.Value, group = groupName }
+                data = new { connectId = Context.ConnectionId, connectName = from.Value, group = groupName }
             });
-            //await Clients.Caller.SendAsync("SendGroup", new Message
-            //{
-            //    type = MsgType.GroupUserLeave,
-            //    data = new { key = Context.ConnectionId, value = from.Value, group = groupName }
-            //});
+
             if (result)
             {
-                await Clients.All.SendAsync("GroupList", new Message
+                await Clients.All.SendAsync(PushMsg.GroupList, new Message
                 {
                     type = MsgType.GroupRemove,
                     data = groupName
